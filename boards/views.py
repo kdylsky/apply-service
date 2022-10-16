@@ -80,3 +80,26 @@ class BoardView(View):
 
         except Skill.DoesNotExist:
             return JsonResponse({"message" :"skill_does_not_exist"}, status=400)
+
+class DetailBoardView(View):
+    def get(self, request, board_id):
+        try:
+            board = Board.objects.select_related('company').prefetch_related('skills').get(id = board_id)
+            
+            result = {
+                "채용공고_id"        : board.id,
+                "회사_id"           : board.company.id,
+                "회사_name"         : board.company.name,
+                "국가"              : board.company.regions.country.name,
+                "지역"              : board.company.regions.name,
+                "채용포지션"          : board.position,
+                "채용보상금"          : board.money,
+                "채용내용"            : board.descrtption,
+                "사용기술"            : [skill.name for skill in board.skills.all()],
+                "회사에가올린다른채용공고" : [post.id for post in Board.objects.filter(company = board.company).exclude(id=board_id)]
+            }
+            
+            return JsonResponse({"result": result}, status = 200)
+        
+        except Board.DoesNotExist:
+            return JsonResponse({"message" :"board_does_not_exist"}, status=400)
