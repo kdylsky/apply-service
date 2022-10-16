@@ -3,6 +3,7 @@ import json
 from django.db           import transaction
 from django.http         import JsonResponse
 from django.views        import View
+from django.db.models    import Q 
 
 from core.utils          import login_company_decorator
 from companies.models    import Company
@@ -44,3 +45,38 @@ class BoardView(View):
         except json.JSONDecodeError:
             return JsonResponse({"message"  :"json_decode_error"}, status = 400)
 
+    def get(self, request):
+        try:
+            search = request.GET.get("search")
+            
+            if search:
+                boards = Board.objects.filter(
+                    Q(company__name__icontains          = search)|
+                    Q(descrtption__icontains            = search)|
+                    Q(position__icontains               = search)|
+                    Q(skills__name__icontains           = search)|
+                    Q(company__regions__name__icontains = search)
+                    ).distinct()
+            else:
+                boards = Board.objects.all()        
+            
+            result = [{
+                "채용공고_id"     : board.id,
+                "회사_id"        : board.company.id,
+                "회사_이름"       : board.company.name,
+                "채용포지션"       : board.position,
+                "채용보상금"       : board.money,
+                "채용내용"        : board.descrtption,
+                "사용기술"        : [skill.name for skill in board.skills.all()]
+            }for board in boards]        
+
+            return JsonResponse({"result": result}, status = 200)
+
+        except KeyError:
+            return JsonResponse({"mssage":"key_error"}, status=400)
+
+        except Board.DoesNotExist:
+            return JsonResponse({"message" :"board_does_not_exist"}, status=400)
+
+        except Skill.DoesNotExist:
+            return JsonResponse({"message" :"skill_does_not_exist"}, status=400)
