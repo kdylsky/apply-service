@@ -13,11 +13,13 @@ class Apply(models.Model):
         db_table    = "applies"
 
 class Board(models.Model):
-    company      = models.ForeignKey(Company, on_delete = models.CASCADE)
-    money        = models.IntegerField()
-    descrtption  = models.TextField()
-    position     = models.CharField(max_length = 50) 
-    skills       = models.ManyToManyField("Skill", related_name="board_of_skills")
+    company         = models.ForeignKey(Company, on_delete = models.CASCADE)
+    money           = models.IntegerField()
+    descrtption     = models.TextField()
+    position        = models.CharField(max_length = 50) 
+    skills          = models.ManyToManyField("Skill", related_name="board_of_skills")
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
     
     class Meta:
         db_table = "boards"
