@@ -5,10 +5,11 @@ import bcrypt
 from django.http        import JsonResponse
 from django.views       import View
 from django.conf        import settings
+from boards.models import Board
 
 from companies.models   import Company
 from core.models        import Region
-from core.utils         import duplicate_check_username
+from core.utils         import duplicate_check_username, login_company_decorator
 
 class SignUpView(View):
     def post(self, request):
@@ -63,3 +64,20 @@ class SignInView(View):
         except Company.DoesNotExist:
             return JsonResponse({"message" :"company_does_not_exist"}, status=400)
 
+class BoardListView(View):
+    @login_company_decorator
+    def get(self, request):
+        try:
+            company       = request.user
+            board_lists   = Board.objects.filter(company = company)
+
+            result = [
+                {
+                    "채용공고_id"       :board_list.id,
+                
+                }for board_list in board_lists]
+
+            return JsonResponse({"result":result}, status = 200)
+        
+        except Board.DoesNotExist:
+            return JsonResponse({"message" :"board_does_not_exist"}, status=400)

@@ -8,7 +8,8 @@ from django.conf    import settings
 
 from users.models   import User
 from core.models    import Region
-from core.utils     import check_email, duplicate_check_email
+from core.utils     import check_email, duplicate_check_email, login_user_decorator
+from boards.models  import Apply
 
 class SignUpView(View):
     def post(self, request):
@@ -66,3 +67,25 @@ class SignInView(View):
 
         except User.DoesNotExist:
             return JsonResponse({"message" :"user_does_not_exist"}, status=400)
+
+class ApplyListView(View):
+    @login_user_decorator
+    def get(self, request):
+        try:
+            user        = request.user
+            apply_lists   = Apply.objects.filter(user = user)
+
+            result = [
+                {
+                    "지원_id"       :apply_list.id,
+                    "회원이름"       :user.name,
+                    "회원이메일"      :user.email,
+                    "지원회사"       :apply_list.board.company.name,
+                    "지원포지션"      :apply_list.board.position
+                
+                }for apply_list in apply_lists]
+
+            return JsonResponse({"result":result}, status = 200)
+        
+        except Apply.DoesNotExist:
+            return JsonResponse({"message" :"apply_does_not_exist"}, status=400)
