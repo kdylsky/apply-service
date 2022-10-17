@@ -120,4 +120,69 @@ class DetailBoardView(View):
         except Board.DoesNotExist:
             return JsonResponse({"message" :"board_does_not_exist"}, status=400)
 
+    @login_company_decorator
+    def delete(self, request, board_id):
+        try:
+            company         = request.user
+            board           = Board.objects.get(id = board_id)
+            board_company   = board.company 
+            
+            if company == board_company:
+                board.delete()
+                return JsonResponse({"message":"delete_success"}, status = 200)
+            
+            else:
+                return JsonResponse({"message":"is not your board"}, status = 400)
+        
+        except Board.DoesNotExist:
+            return JsonResponse({"message" :"board_does_not_exist"}, status=400)
+
+    @login_company_decorator
+    @transaction.atomic()
+    def patch(self, request, board_id):
+        try:
+            data                = json.loads(request.body)
+            company             = request.user
+            board               = Board.objects.get(id = board_id)
+            board_company       = board.company 
+            money               = data.get("money", board.money)
+            position            = data.get("position", board.position)
+            skills              = data.get("skills")        
+            
+            if company == board_company:    
+                temp_board, created = Board.objects.update_or_create(
+                    id              = board_id,
+                    defaults        =
+                    {
+                        "money"     : money,
+                        "position"  : position
+                    }
+                )
+                
+                if not created:
+                    if skills == None:
+                        skills = board.skills.all() 
+                        for skill in skills:
+                            temp_board.skills.add(skill)
+                    else:
+                        temp_board.skills.clear()
+                        for skill in skills:
+                            skill = Skill.objects.get(name = skill)
+                            temp_board.skills.add(skill)
+
+                temp_board.save()
+
+                return JsonResponse({"message":"patch_success"}, status = 200)
+            
+            else:
+                return JsonResponse({"message":"is not your board"}, status = 400)
+        
+        except KeyError:
+            return JsonResponse({"mssage":"key_error"}, status=400)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({"message"  :"json_decode_error"}, status = 400)
+        
+        except Skill.DoesNotExist:
+            return JsonResponse({"message" :"skill_does_not_exist"}, status=400)
 
