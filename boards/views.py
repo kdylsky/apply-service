@@ -5,9 +5,9 @@ from django.http         import JsonResponse
 from django.views        import View
 from django.db.models    import Q 
 
-from core.utils          import login_company_decorator
+from core.utils          import login_company_decorator, login_user_decorator
 from companies.models    import Company
-from boards.models       import Skill, Board
+from boards.models       import Skill, Board, Apply
 
 class BoardView(View):
     @login_company_decorator
@@ -103,3 +103,21 @@ class DetailBoardView(View):
         
         except Board.DoesNotExist:
             return JsonResponse({"message" :"board_does_not_exist"}, status=400)
+
+    @login_user_decorator
+    def post(self, request, board_id):
+        try:
+            user = request.user
+            board = Board.objects.get(id = board_id)
+            
+            apply, created = Apply.objects.get_or_create(user = user, board= board)
+
+            if not created:
+                return JsonResponse({"message":"already apply company"}, status = 400)
+
+            return JsonResponse({"message":"apply_success"}, status = 201)
+        
+        except Board.DoesNotExist:
+            return JsonResponse({"message" :"board_does_not_exist"}, status=400)
+
+
