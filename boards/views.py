@@ -177,9 +177,6 @@ class DetailBoardView(View):
             else:
                 return JsonResponse({"message":"is not your board"}, status = 400)
         
-        except KeyError:
-            return JsonResponse({"mssage":"key_error"}, status=400)
-        
         except json.JSONDecodeError:
             return JsonResponse({"message"  :"json_decode_error"}, status = 400)
         
